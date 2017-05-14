@@ -20,12 +20,11 @@ filename = ',notepad'
 apiUrl = 'http://reports.socvr.org/api/create-report'
 
 helpmessage = \
-        '    o, open:                    Open all reports not on ignore list\n' + \
-        '    `number` [b[back]]:         Open up to `number` reports, fetch from the back of the list if b or back is present\n' + \
-        '    ir, ignore rest:            Put all unhandled reports from you last querry on your ignore list\n' + \
-        '    fa, fetch amount:           Display the number of unhandled reports\n' + \
-        '    dil, delete ignorelist:     Delete your ignorelist\n' + \
-        '    commands:                   Print this help'
+        '    add `message`:    Adds `message` to your notepad\n' + \
+        '    rm  `idx`:        Deletes the message at `idx`\n' + \
+        '    rma:              Clear your notepad\n' + \
+        '    show:             Show your messages\n' + \
+        '    rebooot notepad:  Reboot this bot'
 
 def _parseMessage(msg):
     temp = msg.split()
