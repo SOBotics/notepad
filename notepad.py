@@ -23,7 +23,7 @@ helpmessage = \
         '    rm  `idx`:        Delete the message at `idx`\n' + \
         '    rma:              Clear your notepad\n' + \
         '    show:             Show your messages\n' + \
-        '    rebooot notepad:  Reboot this bot'
+        '    reboot notepad:   Reboot this bot'
 
 def _parseMessage(msg):
     temp = msg.split()
@@ -84,10 +84,12 @@ def onMessage(message, client):
         icommand = command.lower()
         if icommand == 'reboot notepad':
             os._exit(1)
+        if icommand == 'help':
+            message.message.reply('Try `commands <botname>`, e.g. `commands notepad`.')
         if icommand in ['a', 'alive']:
             message.message.reply('[notepad] Yes.')
             return
-        if icommand == 'notepad commands':
+        if icommand == 'commands notepad':
             message.room.send_message(helpmessage)
             return
     except:
