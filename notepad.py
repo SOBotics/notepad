@@ -6,7 +6,6 @@ import logging
 import logging.handlers
 import os
 import pickle
-import OpenReports
 import requests
 import json as js
 
@@ -20,15 +19,15 @@ filename = ',notepad'
 apiUrl = 'http://reports.socvr.org/api/create-report'
 
 helpmessage = \
-        '    add `message`:    Adds `message` to your notepad\n' + \
-        '    rm  `idx`:        Deletes the message at `idx`\n' + \
+        '    add `message`:    Add `message` to your notepad\n' + \
+        '    rm  `idx`:        Delete the message at `idx`\n' + \
         '    rma:              Clear your notepad\n' + \
         '    show:             Show your messages\n' + \
         '    rebooot notepad:  Reboot this bot'
 
 def _parseMessage(msg):
     temp = msg.split()
-    return ' '.join(temp[1:]).lower()
+    return ' '.join(temp[1:])
 
 def buildReport(notepad):
     ret = {'botName' : 'Notepad'}
@@ -47,24 +46,27 @@ def handleCommand(message, command, uID):
     except:
         currNotepad = []
     if words[0] == 'add':
-        currNotepad.append(''.join(words[1:]))
+        currNotepad.append(' '.join(words[1:]))
+        message.message.reply('Added message to your notepad.')
     if words[0] == 'rm':
         which = int(words[1])
         if which > len(currNotepad):
             message.message.reply('Item does not exist.')
         del currNotepad[which - 1]
+        message.message.reply('Message deletedi.')
     if words[0] == 'rma':
         currNotepad = []
+        message.message.reply('All messages deleted.')
     if words[0] == 'show':
         if not currNotepad:
             message.message.reply('You have no saved messages.')
             return
-        report = buildReport(notepad)
+        report = buildReport(currNotepad)
         r = requests.post(apiUrl, data=js.dumps(report))
         r.raise_for_status()
         message.message.reply('Opened your notepad [here](%s).'%r.text)
         return
-    f = open(uID + filename, 'wb')
+    f = open(str(uID) + filename, 'wb')
     pickle.dump(currNotepad, f)
         
 def onMessage(message, client):
@@ -79,18 +81,19 @@ def onMessage(message, client):
             return
         userID = message.user.id
         command = _parseMessage(message.content)
-        if command == 'reboot notepad':
+        icommand = command.lower()
+        if icommand == 'reboot notepad':
             os._exit(1)
-        if command in ['a', 'alive']:
+        if icommand in ['a', 'alive']:
             message.message.reply('[notepad] Yes.')
             return
-        if command == 'commands':
+        if icommand == 'commands':
             message.room.send_message(helpmessage)
             return
     except:
         return
     
-    handleCommand(messagem command, userID)
+    handleCommand(message, command, userID)
 
 if 'ChatExchangeU' in os.environ:
     email = os.environ['ChatExchangeU']
