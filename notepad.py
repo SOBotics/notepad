@@ -71,7 +71,7 @@ def handleCommand(message, command, uID):
         
 def onMessage(message, client):
     if isinstance(message, chatexchange.events.MessagePosted) and message.content in ['🚂', '🚆']:
-        message.room.send_message('🚃 by notepad')
+        message.room.send_message('[🚃](https://github.com/SOBotics/notepad)')
         return
 
     amount = None
