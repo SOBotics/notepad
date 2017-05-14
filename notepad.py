@@ -87,7 +87,7 @@ def onMessage(message, client):
         if icommand in ['a', 'alive']:
             message.message.reply('[notepad] Yes.')
             return
-        if icommand == 'commands':
+        if icommand == 'notepad commands':
             message.room.send_message(helpmessage)
             return
     except:
