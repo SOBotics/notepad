@@ -53,7 +53,7 @@ def handleCommand(message, command, uID):
         if which > len(currNotepad):
             message.message.reply('Item does not exist.')
         del currNotepad[which - 1]
-        message.message.reply('Message deletedi.')
+        message.message.reply('Message deleted.')
     if words[0] == 'rma':
         currNotepad = []
         message.message.reply('All messages deleted.')
