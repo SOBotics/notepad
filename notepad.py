@@ -8,6 +8,7 @@ import os
 import pickle
 import requests
 import json as js
+from subprocess import call
 
 import chatexchange.client
 import chatexchange.events
@@ -86,6 +87,9 @@ def onMessage(message, client):
         command = _parseMessage(message.content)
         icommand = command.lower()
         if icommand == 'reboot notepad':
+            os._exit(1)
+        if icommand == 'update notepad':
+            call(['git', 'pull'])
             os._exit(1)
         if icommand == 'help':
             message.message.reply('Try `commands <botname>`, e.g. `commands notepad`.')
