@@ -48,27 +48,27 @@ def handleCommand(message, command, uID):
         currNotepad = []
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
-        message.message.reply('Added message to your notepad.')
+        message.room.send_message('Added message to your notepad.')
     if words[0] == 'rm':
         try:
             which = int(words[1])
             if which > len(currNotepad):
-                message.message.reply('Item does not exist.')
+                message.room.send_message('Item does not exist.')
             del currNotepad[which - 1]
-            message.message.reply('Message deleted.')
+            message.room.send_message('Message deleted.')
         except:
             return
     if words[0] == 'rma':
         currNotepad = []
-        message.message.reply('All messages deleted.')
+        message.room.send_message('All messages deleted.')
     if words[0] == 'show':
         if not currNotepad:
-            message.message.reply('You have no saved messages.')
+            message.room.send_message('You have no saved messages.')
             return
         report = buildReport(currNotepad)
         r = requests.post(apiUrl, data=js.dumps(report))
         r.raise_for_status()
-        message.message.reply('Opened your notepad [here](%s).'%r.text)
+        message.room.send_message('Opened your notepad [here](%s).'%r.text)
         return
     f = open(str(uID) + filename, 'wb')
     pickle.dump(currNotepad, f)
@@ -92,9 +92,9 @@ def onMessage(message, client):
             call(['git', 'pull'])
             os._exit(1)
         if icommand == 'help':
-            message.message.reply('Try `commands <botname>`, e.g. `commands notepad`.')
+            message.room.send_message('Try `commands <botname>`, e.g. `commands notepad`.')
         if icommand in ['a', 'alive']:
-            message.message.reply('[notepad] Yes.')
+            message.room.send_message('[notepad] Yes.')
             return
         if icommand == 'commands notepad':
             message.room.send_message(helpmessage)
