@@ -9,6 +9,7 @@ import pickle
 import requests
 import json as js
 from subprocess import call
+from threading import Timer
 
 import chatexchange.client
 import chatexchange.events
@@ -20,11 +21,12 @@ filename = ',notepad'
 apiUrl = 'http://reports.socvr.org/api/create-report'
 
 helpmessage = \
-        '    add `message`:    Add `message` to your notepad\n' + \
-        '    rm  `idx`:        Delete the message at `idx`\n' + \
-        '    rma:              Clear your notepad\n' + \
-        '    show:             Show your messages\n' + \
-        '    reboot notepad:   Reboot this bot'
+        '    add `message`:        Add `message` to your notepad\n' + \
+        '    rm  `idx`:            Delete the message at `idx`\n' + \
+        '    rma:                  Clear your notepad\n' + \
+        '    show:                 Show your messages\n' + \
+        '    remindme `m` [...]    Remind me of this message in `m` minutes\n' + \
+        '    reboot notepad:       Reboot this bot'
 
 def _parseMessage(msg):
     temp = msg.split()
@@ -39,6 +41,9 @@ def buildReport(notepad):
     ret['posts'] = posts
     return ret
 
+def reminder(msg):
+    msg.message.reply('Reminder for this message is due.')
+
 def handleCommand(message, command, uID):
     words = command.split()
     try:
@@ -46,6 +51,21 @@ def handleCommand(message, command, uID):
         currNotepad = pickle.load(f)
     except:
         currNotepad = []
+    if words[0] == 'remindme':
+        if len(words) < 2:
+            message.room.send_message('Missing duration argument.')
+            return
+        try:
+            time = float(words[1])
+        except:
+            message.room.send_message('Number expected as first argument, got %s.'%words[1])
+            return
+        if not time > 0:
+            message.room.send_message('Duration must be positive.')
+            return
+        t = Timer(time, reminder, args=(message,))
+        t.start()
+        return
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
         message.room.send_message('Added message to your notepad.')
@@ -105,7 +125,11 @@ def onMessage(message, client):
     except:
         return
     
-    handleCommand(message, command, userID)
+    try:
+        handleCommand(message, command, userID)
+    except Exception as e:
+        message.room.send_message('Error occurred: ' + str(e) + ' (cc @Baum)')
+
 
 if 'ChatExchangeU' in os.environ:
     email = os.environ['ChatExchangeU']
