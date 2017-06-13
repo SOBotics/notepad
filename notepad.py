@@ -63,7 +63,7 @@ def handleCommand(message, command, uID):
         if not time > 0:
             message.room.send_message('Duration must be positive.')
             return
-        t = Timer(time, reminder, args=(message,))
+        t = Timer(60*time, reminder, args=(message,))
         t.start()
         return
     if words[0] == 'add':
