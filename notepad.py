@@ -65,7 +65,7 @@ def handleCommand(message, command, uID):
             return
         t = Timer(60*time, reminder, args=(message,))
         t.start()
-        message.room.send_message('I will remind you of this message in %s minutes'%time)
+        message.room.send_message('I will remind you of this message in %s minutes.'%time)
         return
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
