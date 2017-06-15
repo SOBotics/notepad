@@ -25,7 +25,7 @@ helpmessage = \
         '    rm  `idx`:            Delete the message at `idx`\n' + \
         '    rma:                  Clear your notepad\n' + \
         '    show:                 Show your messages\n' + \
-        '    remindme `m` [...]    Remind me of this message in `m` minutes\n' + \
+        '    remindme `m` [...]:   Reminds you of this message in `m` minutes\n' + \
         '    reboot notepad:       Reboot this bot'
 
 def _parseMessage(msg):
@@ -65,6 +65,7 @@ def handleCommand(message, command, uID):
             return
         t = Timer(60*time, reminder, args=(message,))
         t.start()
+        message.room.send_message('I will remind you of this message in %s minutes'%time)
         return
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
