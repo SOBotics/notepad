@@ -95,7 +95,7 @@ def handleCommand(message, command, uID):
     pickle.dump(currNotepad, f)
         
 def onMessage(message, client):
-    if isinstance(message, chatexchange.events.MessagePosted) and message.content in ['🚂', '🚆']:
+    if isinstance(message, chatexchange.events.MessagePosted) and message.content in ['🚂', '🚆', '🚄']:
         message.room.send_message('[🚃](https://github.com/SOBotics/notepad)')
         return
 
