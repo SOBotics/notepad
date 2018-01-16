@@ -153,7 +153,7 @@ print('Joined room')
 room.send_message('[notepad] Hi o/')
 
 while True:
-    watcher = room.watch(onMessage)
+    watcher = room.watch_socket(onMessage)
     watcher.thread.join()
 
 
