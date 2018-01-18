@@ -32,8 +32,8 @@ helpmessage = indent(dedent("""\
 
 
 def _parseMessage(msg):
-    temp = msg.split()
-    return ' '.join(temp[1:])
+    _,*tail = msg.split()
+    return ' '.join(tail)
 
 def buildReport(notepad):
     ret = {'botName' : 'Notepad'}
@@ -48,20 +48,20 @@ def reminder(msg):
     msg.message.reply('Reminder for this message is due.')
 
 def handleCommand(message, command, uID):
-    words = command.split()
+    word,*rest = command.split()
     try:
         with open(str(uID) + filename, 'rb') as f:
             currNotepad = pickle.load(f)
     except:
         currNotepad = []
-    if words[0] == 'remindme':
-        if len(words) < 2:
+    if word == 'remindme':
+        if len(rest) < 1:
             message.room.send_message('Missing duration argument.')
             return
         try:
-            time = float(words[1])
+            time = float(rest[0])
         except:
-            message.room.send_message('Number expected as first argument, got {}.'.format(words[1]))
+            message.room.send_message('Number expected as first argument, got {}.'.format(rest[0]))
             return
         if not time > 0:
             message.room.send_message('Duration must be positive.')
@@ -70,22 +70,22 @@ def handleCommand(message, command, uID):
         t.start()
         message.room.send_message('I will remind you of this message in {} minutes.'.format(time))
         return
-    elif words[0] == 'add':
-        currNotepad.append(' '.join(words[1:]))
+    elif word == 'add':
+        currNotepad.append(' '.join(rest))
         message.room.send_message('Added message to your notepad.')
-    elif words[0] == 'rm':
+    elif word == 'rm':
         try:
-            which = int(words[1])
+            which = int(rest[0])
             if which > len(currNotepad):
                 message.room.send_message('Item does not exist.')
             del currNotepad[which - 1]
             message.room.send_message('Message deleted.')
         except:
             return
-    elif words[0] == 'rma':
+    elif word == 'rma':
         currNotepad = []
         message.room.send_message('All messages deleted.')
-    elif words[0] == 'show':
+    elif word == 'show':
         if not currNotepad:
             message.room.send_message('You have no saved messages.')
             return
