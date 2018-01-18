@@ -50,8 +50,8 @@ def reminder(msg):
 def handleCommand(message, command, uID):
     words = command.split()
     try:
-        f = open(str(uID) + filename, 'rb')
-        currNotepad = pickle.load(f)
+        with open(str(uID) + filename, 'rb') as f:
+            currNotepad = pickle.load(f)
     except:
         currNotepad = []
     if words[0] == 'remindme':
@@ -94,8 +94,8 @@ def handleCommand(message, command, uID):
         r.raise_for_status()
         message.room.send_message('Opened your notepad [here]({}).'.format(r.text))
         return
-    f = open(str(uID) + filename, 'wb')
-    pickle.dump(currNotepad, f)
+    with open(str(uID) + filename, 'wb') as f:
+        pickle.dump(currNotepad, f)
         
 def onMessage(message, client):
     if str(message.room.id) != roomID:
