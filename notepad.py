@@ -61,14 +61,14 @@ def handleCommand(message, command, uID):
         try:
             time = float(words[1])
         except:
-            message.room.send_message('Number expected as first argument, got %s.'%words[1])
+            message.room.send_message('Number expected as first argument, got {}.'.format(words[1]))
             return
         if not time > 0:
             message.room.send_message('Duration must be positive.')
             return
         t = Timer(60*time, reminder, args=(message,))
         t.start()
-        message.room.send_message('I will remind you of this message in %s minutes.'%time)
+        message.room.send_message('I will remind you of this message in {} minutes.'.format(time))
         return
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
@@ -92,7 +92,7 @@ def handleCommand(message, command, uID):
         report = buildReport(currNotepad)
         r = requests.post(apiUrl, data=js.dumps(report))
         r.raise_for_status()
-        message.room.send_message('Opened your notepad [here](%s).'%r.text)
+        message.room.send_message('Opened your notepad [here]({}).'.format(r.text))
         return
     f = open(str(uID) + filename, 'wb')
     pickle.dump(currNotepad, f)
@@ -134,7 +134,7 @@ def onMessage(message, client):
     try:
         handleCommand(message, command, userID)
     except Exception as e:
-        message.room.send_message('Error occurred: ' + str(e) + ' (cc @Baum)')
+        message.room.send_message('Error occurred: {} (cc @Baum)'.format(e))
 
 
 if 'ChatExchangeU' in os.environ:
