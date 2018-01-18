@@ -70,10 +70,10 @@ def handleCommand(message, command, uID):
         t.start()
         message.room.send_message('I will remind you of this message in {} minutes.'.format(time))
         return
-    if words[0] == 'add':
+    elif words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
         message.room.send_message('Added message to your notepad.')
-    if words[0] == 'rm':
+    elif words[0] == 'rm':
         try:
             which = int(words[1])
             if which > len(currNotepad):
@@ -82,10 +82,10 @@ def handleCommand(message, command, uID):
             message.room.send_message('Message deleted.')
         except:
             return
-    if words[0] == 'rma':
+    elif words[0] == 'rma':
         currNotepad = []
         message.room.send_message('All messages deleted.')
-    if words[0] == 'show':
+    elif words[0] == 'show':
         if not currNotepad:
             message.room.send_message('You have no saved messages.')
             return
@@ -114,18 +114,18 @@ def onMessage(message, client):
         icommand = command.lower()
         if icommand == 'reboot notepad':
             os._exit(1)
-        if icommand == 'update notepad':
+        elif icommand == 'update notepad':
             call(['git', 'pull'])
             os._exit(1)
-        if icommand == 'help':
+        elif icommand == 'help':
             message.room.send_message('Try `commands <botname>`, e.g. `commands notepad`.')
-        if icommand in ['a', 'alive']:
+        elif icommand in ['a', 'alive']:
             message.room.send_message('[notepad] Yes.')
             return
-        if icommand == 'commands':
+        elif icommand == 'commands':
             message.room.send_message('[notepad] Try `commands notepad`')
             return
-        if icommand == 'commands notepad':
+        elif icommand == 'commands notepad':
             message.room.send_message(helpmessage)
             return
     except:
