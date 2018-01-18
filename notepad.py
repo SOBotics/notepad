@@ -10,6 +10,7 @@ import requests
 import json as js
 from subprocess import call
 from threading import Timer
+from textwrap import dedent,indent
 
 import chatexchange.client
 import chatexchange.events
@@ -20,13 +21,15 @@ selfID = 7829893
 filename = ',notepad'
 apiUrl = 'http://reports.socvr.org/api/create-report'
 
-helpmessage = \
-        '    add `message`:        Add `message` to your notepad\n' + \
-        '    rm  `idx`:            Delete the message at `idx`\n' + \
-        '    rma:                  Clear your notepad\n' + \
-        '    show:                 Show your messages\n' + \
-        '    remindme `m` [...]:   Reminds you of this message in `m` minutes\n' + \
-        '    reboot notepad:       Reboot this bot'
+helpmessage = indent(dedent("""\
+                            add `message`:        Add `message` to your notepad
+                            rm  `idx`:            Delete the message at `idx`
+                            rma:                  Clear your notepad
+                            show:                 Show your messages
+                            remindme `m` [...]:   Reminds you of this message in `m` minutes
+                            reboot notepad:       Reboot this bot
+                            """), ' '*4)
+
 
 def _parseMessage(msg):
     temp = msg.split()
