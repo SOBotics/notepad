@@ -108,6 +108,9 @@ def onMessage(message, client):
             return
         userID = message.user.id
         command = _parseMessage(message.content)
+        # Empty command
+        if not command.split():
+            return
         icommand = command.lower()
         if icommand == 'reboot notepad':
             os._exit(1)
