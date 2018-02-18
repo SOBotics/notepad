@@ -18,7 +18,7 @@ hostID = 'stackoverflow.com'
 roomID = '111347'
 selfID = 7829893
 filename = ',notepad'
-apiUrl = 'http://reports.socvr.org/api/create-report'
+apiUrl = 'http://reports.sobotics.org/api/v2/report/create'
 
 helpmessage = \
         '    add `message`:        Add `message` to your notepad\n' + \
@@ -33,12 +33,13 @@ def _parseMessage(msg):
     return ' '.join(temp[1:])
 
 def buildReport(notepad):
-    ret = {'botName' : 'Notepad'}
+    ret = {'appName' : 'Notepad',
+            'appURL' : 'https://github.com/SOBotics/notepad'}
     posts = []
     for i, v in enumerate(notepad, start=1):
         posts.append([{'id':'idx', 'name':'Message Index', 'value':i},
             {'id':'msg', 'name':'Message', 'value':v}])
-    ret['posts'] = posts
+    ret['fields'] = posts
     return ret
 
 def reminder(msg):
@@ -87,9 +88,10 @@ def handleCommand(message, command, uID):
             message.room.send_message('You have no saved messages.')
             return
         report = buildReport(currNotepad)
-        r = requests.post(apiUrl, data=js.dumps(report))
+        r = requests.post(apiUrl, json=report)
         r.raise_for_status()
-        message.room.send_message('Opened your notepad [here](%s).'%r.text)
+        js = r.json()
+        message.room.send_message('Opened your notepad [here](%s).'%js['reportURL'])
         return
     f = open(str(uID) + filename, 'wb')
     pickle.dump(currNotepad, f)
