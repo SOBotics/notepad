@@ -18,7 +18,7 @@ hostID = 'stackoverflow.com'
 roomID = '111347'
 selfID = 7829893
 filename = ',notepad'
-apiUrl = 'http://reports.sobotics.org/api/v2/report/create'
+apiUrl = 'https://reports.sobotics.org/api/v2/report/create'
 
 helpmessage = \
         '    add `message`:        Add `message` to your notepad\n' + \
