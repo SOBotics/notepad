@@ -60,7 +60,7 @@ def handleCommand(message, command, uID):
             return
 
         pattern = '(?:(?P<days>\d+)d)? \s* (?:(?P<hours>\d+)h)? \s* (?:(?P<minutes>\d+)m)? \s* (?:(?P<seconds>\d+)s)?'
-        res = re.match(pattern, words[1])
+        res = re.match(pattern, words[1], re.VERBOSE)
         if not res:
             message.room.send_message(words[1] + 'could not be parsed as duration.')
             return
