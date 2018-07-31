@@ -6,8 +6,10 @@ import logging
 import logging.handlers
 import os
 import pickle
+import re
 import requests
 import json as js
+from datetime import timedelta
 from subprocess import call
 from threading import Timer
 
@@ -56,17 +58,23 @@ def handleCommand(message, command, uID):
         if len(words) < 2:
             message.room.send_message('Missing duration argument.')
             return
-        try:
-            time = float(words[1])
-        except:
-            message.room.send_message('Number expected as first argument, got %s.'%words[1])
+
+        pattern = '(?:(?P<days>\d+)d)? \s* (?:(?P<hours>\d+)h)? \s* (?:(?P<minutes>\d+)m)? \s* (?:(?P<seconds>\d+)s)?'
+        res = re.match(pattern, words[1], re.VERBOSE)
+        if not res:
+            message.room.send_message(words[1] + 'could not be parsed as duration.')
             return
+
+        spec = {key:int(val) if val else 0 for key,val in res.groupdict().items()}
+        delta = timedelta(**spec)
+        time = delta.total_seconds()
+
         if not time > 0:
             message.room.send_message('Duration must be positive.')
             return
-        t = Timer(60*time, reminder, args=(message,))
+        t = Timer(time, reminder, args=(message,))
         t.start()
-        message.room.send_message('I will remind you of this message in %s minutes.'%time)
+        message.room.send_message('I will remind you of this message in %s.'%delta)
         return
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
