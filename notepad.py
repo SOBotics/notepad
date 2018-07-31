@@ -9,18 +9,21 @@ import pickle
 import re
 import requests
 import json as js
-from datetime import timedelta
+from datetime import datetime, timedelta
 from subprocess import call
 from threading import Timer
 
 import chatexchange.client
 import chatexchange.events
+import chatexchange.messages
 
 hostID = 'stackoverflow.com'
 roomID = '111347'
 filename = ',notepad'
+timersFilename = 'notepadTimers'
 apiUrl = 'https://reports.sobotics.org/api/v2/report/create'
 durationRegex = re.compile('^(?:(?P<weeks>\d+)w)?(?:(?P<days>\d+)d)?(?:(?P<hours>\d+)h)?(?:(?P<minutes>\d+)m?)?$', re.VERBOSE)
+timers = []
 
 helpmessage = \
         '    add `message`:        Add `message` to your notepad\n' + \
@@ -45,7 +48,7 @@ def buildReport(notepad):
     return ret
 
 def reminder(msg):
-    msg.message.reply('Reminder for this message is due.')
+    msg.reply('Reminder for this message is due.')
 
 def handleCommand(message, command, uID):
     words = command.split()
@@ -73,9 +76,13 @@ def handleCommand(message, command, uID):
             message.room.send_message('Duration must be positive.')
             return
         
-        t = Timer(time, reminder, args=(message,))
+        timers.append({'time': datetime.utcnow() + delta, 'messageId': message.message.id})
+        t = Timer(time, reminder, args=(message.message,))
         t.start()
         message.room.send_message('I will remind you of this message in %s.'%delta)
+
+        with open(timersFilename, 'wb') as f:
+            pickle.dump(timers, f)
         return
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
@@ -102,8 +109,8 @@ def handleCommand(message, command, uID):
         js = r.json()
         message.room.send_message('Opened your notepad [here](%s).'%js['reportURL'])
         return
-    f = open(str(uID) + filename, 'wb')
-    pickle.dump(currNotepad, f)
+    with open(str(uID) + filename, 'wb') as f:
+        pickle.dump(currNotepad, f)
         
 def onMessage(message, client):
     if str(message.room.id) != roomID:
@@ -165,6 +172,27 @@ room = client.get_room(roomID)
 room.join()
 print('Joined room')
 room.send_message('[notepad] Hi o/')
+
+# Load timers
+try:
+    with open(timersFilename, 'rb') as f:
+        timersToLoad = pickle.load(f)
+
+        for item in timersToLoad:
+            diff = item['time'] - datetime.utcnow()
+
+            # Filter out expired timers
+            if diff < timedelta(0):
+                continue
+            
+            timers.append(item)
+
+            msg = chatexchange.messages.Message(item['messageId'], client)
+
+            t = Timer(diff.total_seconds(), reminder, args=(msg,))
+            t.start()
+except:
+    timers = []
 
 while True:
     watcher = room.watch_socket(onMessage)
