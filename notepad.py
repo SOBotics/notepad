@@ -8,6 +8,7 @@ import os
 import pickle
 import requests
 import json as js
+import re
 from subprocess import call
 from threading import Timer
 
@@ -57,9 +58,22 @@ def handleCommand(message, command, uID):
             message.room.send_message('Missing duration argument.')
             return
         try:
-            time = float(words[1])
+            m = re.match('^(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m?)?$', words[1])
+            if m is None:
+                message.room.send_message('Invalid format for time, got %s.'%words[1])
+                return
+            
+            time = 0
+            if m.group(1) is not None:
+                time += float(m.group(1)) * 1440
+            
+            if m.group(2) is not None:
+                time += float(m.group(2)) * 60
+
+            if m.group(3) is not None:
+                time += float(m.group(3))
         except:
-            message.room.send_message('Number expected as first argument, got %s.'%words[1])
+            message.room.send_message('Invalid format for time, got %s.'%words[1])
             return
         if not time > 0:
             message.room.send_message('Duration must be positive.')
