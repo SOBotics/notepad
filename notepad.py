@@ -18,9 +18,9 @@ import chatexchange.events
 
 hostID = 'stackoverflow.com'
 roomID = '111347'
-selfID = 7829893
 filename = ',notepad'
 apiUrl = 'https://reports.sobotics.org/api/v2/report/create'
+durationRegex = re.compile('^(?:(?P<weeks>\d+)w)?(?:(?P<days>\d+)d)?(?:(?P<hours>\d+)h)?(?:(?P<minutes>\d+)m?)?$', re.VERBOSE)
 
 helpmessage = \
         '    add `message`:        Add `message` to your notepad\n' + \
@@ -50,19 +50,19 @@ def reminder(msg):
 def handleCommand(message, command, uID):
     words = command.split()
     try:
-        f = open(str(uID) + filename, 'rb')
-        currNotepad = pickle.load(f)
+        with open(str(uID) + filename, 'rb') as f:
+            currNotepad = pickle.load(f)
     except:
         currNotepad = []
+
     if words[0] == 'remindme':
         if len(words) < 2:
             message.room.send_message('Missing duration argument.')
             return
 
-        pattern = '(?:(?P<days>\d+)d)? \s* (?:(?P<hours>\d+)h)? \s* (?:(?P<minutes>\d+)m)? \s* (?:(?P<seconds>\d+)s)?'
-        res = re.match(pattern, words[1], re.VERBOSE)
+        res = durationRegex.match(words[1])
         if not res:
-            message.room.send_message(words[1] + 'could not be parsed as duration.')
+            message.room.send_message(words[1] + ' could not be parsed as duration.')
             return
 
         spec = {key:int(val) if val else 0 for key,val in res.groupdict().items()}
@@ -72,6 +72,7 @@ def handleCommand(message, command, uID):
         if not time > 0:
             message.room.send_message('Duration must be positive.')
             return
+        
         t = Timer(time, reminder, args=(message,))
         t.start()
         message.room.send_message('I will remind you of this message in %s.'%delta)
@@ -114,7 +115,7 @@ def onMessage(message, client):
     amount = None
     fromTheBack = False
     try:
-        if message.target_user_id != selfID:
+        if message.target_user_id != client.get_me().id:
             return
         userID = message.user.id
         command = _parseMessage(message.content)
