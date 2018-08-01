@@ -80,6 +80,7 @@ def handleCommand(message, command, uID):
         t.start()
         message.room.send_message('I will remind you of this message in %s.'%delta)
 
+        # Write the new updated timer list to the file
         with open(timersFilename, 'wb') as f:
             pickle.dump(timers, f)
         return
@@ -176,22 +177,31 @@ room.send_message('[notepad] Hi o/')
 try:
     with open(timersFilename, 'rb') as f:
         timersToLoad = pickle.load(f)
+    
+    if not isinstance(timersToLoad, list):
+        raise Exception('Timers are not a valid list.')
+except FileNotFoundError:
+    timersToLoad = []
+except Exception as e:
+    print('Exception loading timers from {}: {}'.format(timersFilename, e))
+    timersToLoad = []
 
-        for item in timersToLoad:
-            diff = item['time'] - datetime.utcnow()
+for item in timersToLoad:
+    try:
+        diff = item['time'] - datetime.utcnow()
 
-            # Filter out expired timers
-            if diff < timedelta(0):
-                continue
-            
-            timers.append(item)
+        # Filter out expired timers
+        if diff < timedelta(0):
+            continue
+        
+        timers.append(item)
 
-            msg = client.get_message(item['messageId'])
+        msg = client.get_message(item['messageId'])
 
-            t = Timer(diff.total_seconds(), reminder, args=(msg,))
-            t.start()
-except:
-    timers = []
+        t = Timer(diff.total_seconds(), reminder, args=(msg,))
+        t.start()
+    except Exception as e:
+        print('Error intializing timer ({}): {}'.format(item, e))
 
 while True:
     watcher = room.watch_socket(onMessage)
