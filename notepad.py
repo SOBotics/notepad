@@ -88,10 +88,7 @@ def handleMessage(message, uID):
         if len(args) < 1:
             raise CommandException('Missing duration argument.')
 
-        try:
-            delta = parseDuration(args[0])
-        except DurationException as e:
-            raise CommandException(e)
+        delta = parseDuration(args[0])
 
         addReminder(delta, message.message)
         message.room.send_message('I will remind you of this message in {0}.'.format(delta))
@@ -99,10 +96,7 @@ def handleMessage(message, uID):
         if len(args) < 1:
             delta = timedelta(minutes=5)
         else:
-            try:
-                delta = parseDuration(args[0])
-            except DurationException as e:
-                raise CommandException(e)
+            delta = parseDuration(args[0])
 
         myMessage = message.message.parent
 

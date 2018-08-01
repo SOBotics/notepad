@@ -1,6 +1,6 @@
 
-class DurationException(Exception):
+class CommandException(Exception):
     pass
 
-class CommandException(Exception):
+class DurationException(CommandException):
     pass
