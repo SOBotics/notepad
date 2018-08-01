@@ -9,7 +9,7 @@ import pickle
 import re
 import requests
 import json as js
-from datetime import timedelta
+from datetime import datetime, timedelta
 from subprocess import call
 from threading import Timer
 
@@ -18,9 +18,11 @@ import chatexchange.events
 
 hostID = 'stackoverflow.com'
 roomID = '111347'
-selfID = 7829893
 filename = ',notepad'
+timersFilename = 'notepadTimers'
 apiUrl = 'https://reports.sobotics.org/api/v2/report/create'
+durationRegex = re.compile('^(?:(?P<weeks>\d+)w)?(?:(?P<days>\d+)d)?(?:(?P<hours>\d+)h)?(?:(?P<minutes>\d+)m?)?$', re.VERBOSE)
+timers = []
 
 helpmessage = \
         '    add `message`:        Add `message` to your notepad\n' + \
@@ -45,24 +47,24 @@ def buildReport(notepad):
     return ret
 
 def reminder(msg):
-    msg.message.reply('Reminder for this message is due.')
+    msg.reply('Reminder for this message is due.')
 
 def handleCommand(message, command, uID):
     words = command.split()
     try:
-        f = open(str(uID) + filename, 'rb')
-        currNotepad = pickle.load(f)
+        with open(str(uID) + filename, 'rb') as f:
+            currNotepad = pickle.load(f)
     except:
         currNotepad = []
+
     if words[0] == 'remindme':
         if len(words) < 2:
             message.room.send_message('Missing duration argument.')
             return
 
-        pattern = '(?:(?P<days>\d+)d)? \s* (?:(?P<hours>\d+)h)? \s* (?:(?P<minutes>\d+)m)? \s* (?:(?P<seconds>\d+)s)?'
-        res = re.match(pattern, words[1], re.VERBOSE)
+        res = durationRegex.match(words[1])
         if not res:
-            message.room.send_message(words[1] + 'could not be parsed as duration.')
+            message.room.send_message(words[1] + ' could not be parsed as duration.')
             return
 
         spec = {key:int(val) if val else 0 for key,val in res.groupdict().items()}
@@ -72,9 +74,15 @@ def handleCommand(message, command, uID):
         if not time > 0:
             message.room.send_message('Duration must be positive.')
             return
-        t = Timer(time, reminder, args=(message,))
+        
+        timers.append({'time': datetime.utcnow() + delta, 'messageId': message.message.id})
+        t = Timer(time, reminder, args=(message.message,))
         t.start()
         message.room.send_message('I will remind you of this message in %s.'%delta)
+
+        # Write the new updated timer list to the file
+        with open(timersFilename, 'wb') as f:
+            pickle.dump(timers, f)
         return
     if words[0] == 'add':
         currNotepad.append(' '.join(words[1:]))
@@ -101,8 +109,8 @@ def handleCommand(message, command, uID):
         js = r.json()
         message.room.send_message('Opened your notepad [here](%s).'%js['reportURL'])
         return
-    f = open(str(uID) + filename, 'wb')
-    pickle.dump(currNotepad, f)
+    with open(str(uID) + filename, 'wb') as f:
+        pickle.dump(currNotepad, f)
         
 def onMessage(message, client):
     if str(message.room.id) != roomID:
@@ -114,7 +122,7 @@ def onMessage(message, client):
     amount = None
     fromTheBack = False
     try:
-        if message.target_user_id != selfID:
+        if message.target_user_id != client.get_me().id:
             return
         userID = message.user.id
         command = _parseMessage(message.content)
@@ -164,6 +172,36 @@ room = client.get_room(roomID)
 room.join()
 print('Joined room')
 room.send_message('[notepad] Hi o/')
+
+# Load timers
+try:
+    with open(timersFilename, 'rb') as f:
+        timersToLoad = pickle.load(f)
+    
+    if not isinstance(timersToLoad, list):
+        raise Exception('Timers are not a valid list.')
+except FileNotFoundError:
+    timersToLoad = []
+except Exception as e:
+    print('Exception loading timers from {}: {}'.format(timersFilename, e))
+    timersToLoad = []
+
+for item in timersToLoad:
+    try:
+        diff = item['time'] - datetime.utcnow()
+
+        # Filter out expired timers
+        if diff < timedelta(0):
+            continue
+        
+        timers.append(item)
+
+        msg = client.get_message(item['messageId'])
+
+        t = Timer(diff.total_seconds(), reminder, args=(msg,))
+        t.start()
+    except Exception as e:
+        print('Error intializing timer ({}): {}'.format(item, e))
 
 while True:
     watcher = room.watch_socket(onMessage)
