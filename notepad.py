@@ -15,7 +15,6 @@ from threading import Timer
 
 import chatexchange.client
 import chatexchange.events
-import chatexchange.messages
 
 hostID = 'stackoverflow.com'
 roomID = '111347'
@@ -187,7 +186,7 @@ try:
             
             timers.append(item)
 
-            msg = chatexchange.messages.Message(item['messageId'], client)
+            msg = client.get_message(item['messageId'])
 
             t = Timer(diff.total_seconds(), reminder, args=(msg,))
             t.start()
