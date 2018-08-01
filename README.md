@@ -2,6 +2,8 @@
 
 ## A simple bot to safe some quick notes or reminders for you
 
+### The commands are:
+
 - add `message`:                   Add `message` to your notepad
 - rm  `idx`:                       Delete the message at `idx`
 - rma:                             Clear your notepad
