@@ -100,13 +100,16 @@ def handleMessage(message, uID):
 
         myMessage = message.message.parent
 
-        if not myMessage:
-            raise CommandException('Snooze requires a reply to my reminder "Reminder for this message is due." message.')
+        errStr = 'Snooze requires a reply to my reminder "Reminder for this message is due." message.'
 
+        if not myMessage:
+            raise CommandException(errStr)
+
+        # .parent creates a new message struct. Avoid initialization twice
         reminderMessage = myMessage.parent
 
         if not reminderMessage:
-            raise CommandException('Snooze requires a reply to my reminder "Reminder for this message is due." message.')
+            raise CommandException(errStr)
 
 
         if reminderMessage.owner.id != message.message.owner.id:
