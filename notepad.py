@@ -49,14 +49,14 @@ def parseDuration(duration):
     if not res:
         raise DurationException('{} could not be parsed as duration.'.format(duration))
         return
-    
+
     spec = {key:int(val) if val else 0 for key,val in res.groupdict().items()}
 
     delta = timedelta(**spec)
 
     if not delta > timedelta(0):
         raise DurationException('Duration must be positive.')
-    
+
     return delta
 
 def _parseMessage(msg):
@@ -92,7 +92,7 @@ def handleMessage(message, uID):
             delta = parseDuration(args[0])
         except DurationException as e:
             raise CommandException(e)
-        
+
         addReminder(delta, message.message)
         message.room.send_message('I will remind you of this message in {0}.'.format(delta))
     if command == 'snooze':
@@ -117,7 +117,7 @@ def handleMessage(message, uID):
 
         if reminderMessage.owner.id != message.message.owner.id:
             raise CommandException('You cannot snooze a message that doesn\'t belong to you.')
-        
+
         addReminder(delta, reminderMessage)
 
         message.room.send_message('Your message has been snoozed for {0}.'.format(delta))
@@ -148,7 +148,7 @@ def handleMessage(message, uID):
         return
     with open(str(uID) + filename, 'wb') as f:
         pickle.dump(currNotepad, f)
-        
+
 def onMessage(message, client):
     if str(message.room.id) != roomID:
         return
@@ -185,7 +185,7 @@ def onMessage(message, client):
             return
     except:
         return
-    
+
     try:
         handleMessage(message, userID)
     except CommandException as e:
@@ -219,7 +219,7 @@ room.send_message('[notepad] Hi o/')
 try:
     with open(timersFilename, 'rb') as f:
         timersToLoad = pickle.load(f)
-    
+
     if not isinstance(timersToLoad, list):
         raise Exception('Timers are not a valid list.')
 except FileNotFoundError:
@@ -235,7 +235,7 @@ for item in timersToLoad:
         # Filter out expired timers
         if diff < timedelta(0):
             continue
-        
+
         timers.append(item)
 
         msg = client.get_message(item['messageId'])
@@ -251,4 +251,3 @@ while True:
 
 
 client.logout()
-

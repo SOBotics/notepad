@@ -1,5 +1,4 @@
 
-
 class DurationException(Exception):
     pass
 
