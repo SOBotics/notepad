@@ -4,11 +4,13 @@
 import getpass
 import logging
 import logging.handlers
+import traceback
 import os
 import pickle
 import re
 import requests
 import json as js
+from exceptions import DurationException, CommandException
 from datetime import datetime, timedelta
 from subprocess import call
 from threading import Timer
@@ -32,6 +34,31 @@ helpmessage = \
         '    remindme `m` [...]:   Reminds you of this message in `m` minutes\n' + \
         '    reboot notepad:       Reboot this bot'
 
+def addReminder(delta, message):
+    timers.append({'time': datetime.utcnow() + delta, 'messageId': message.id})
+    t = Timer(delta.total_seconds(), reminder, args=(message,))
+    t.start()
+
+    # Write the new updated timer list to the file
+    with open(timersFilename, 'wb') as f:
+        pickle.dump(timers, f)
+    return
+
+def parseDuration(duration):
+    res = durationRegex.match(duration)
+    if not res:
+        raise DurationException('{} could not be parsed as duration.'.format(duration))
+        return
+    
+    spec = {key:int(val) if val else 0 for key,val in res.groupdict().items()}
+
+    delta = timedelta(**spec)
+
+    if not delta > timedelta(0):
+        raise DurationException('Duration must be positive.')
+    
+    return delta
+
 def _parseMessage(msg):
     temp = msg.split()
     return ' '.join(temp[1:])
@@ -49,65 +76,75 @@ def buildReport(notepad):
 def reminder(msg):
     msg.reply('Reminder for this message is due.')
 
-def handleCommand(message, command, uID):
-    words = command.split()
+def handleMessage(message, uID):
+    _, command, *args = message.content.split()
     try:
         with open(str(uID) + filename, 'rb') as f:
             currNotepad = pickle.load(f)
     except:
         currNotepad = []
 
-    if words[0] == 'remindme':
-        if len(words) < 2:
-            message.room.send_message('Missing duration argument.')
-            return
+    if command == 'remindme':
+        if len(args) < 1:
+            raise CommandException('Missing duration argument.')
 
-        res = durationRegex.match(words[1])
-        if not res:
-            message.room.send_message(words[1] + ' could not be parsed as duration.')
-            return
-
-        spec = {key:int(val) if val else 0 for key,val in res.groupdict().items()}
-        delta = timedelta(**spec)
-        time = delta.total_seconds()
-
-        if not time > 0:
-            message.room.send_message('Duration must be positive.')
-            return
-        
-        timers.append({'time': datetime.utcnow() + delta, 'messageId': message.message.id})
-        t = Timer(time, reminder, args=(message.message,))
-        t.start()
-        message.room.send_message('I will remind you of this message in %s.'%delta)
-
-        # Write the new updated timer list to the file
-        with open(timersFilename, 'wb') as f:
-            pickle.dump(timers, f)
-        return
-    if words[0] == 'add':
-        currNotepad.append(' '.join(words[1:]))
-        message.room.send_message('Added message to your notepad.')
-    if words[0] == 'rm':
         try:
-            which = int(words[1])
+            delta = parseDuration(args[0])
+        except DurationException as e:
+            raise CommandException(e)
+        
+        addReminder(delta, message.message)
+        message.room.send_message('I will remind you of this message in {0}.'.format(delta))
+    if command == 'snooze':
+        if len(args) < 1:
+            delta = timedelta(minutes=5)
+        else:
+            try:
+                delta = parseDuration(args[0])
+            except DurationException as e:
+                raise CommandException(e)
+
+        myMessage = message.message.parent
+
+        if not myMessage:
+            raise CommandException('Snooze requires a reply to my reminder "Reminder for this message is due." message.')
+
+        reminderMessage = myMessage.parent
+
+        if not reminderMessage:
+            raise CommandException('Snooze requires a reply to my reminder "Reminder for this message is due." message.')
+
+
+        if reminderMessage.owner.id != message.message.owner.id:
+            raise CommandException('You cannot snooze a message that doesn\'t belong to you.')
+        
+        addReminder(delta, reminderMessage)
+
+        message.room.send_message('Your message has been snoozed for {0}.'.format(delta))
+
+    if command == 'add':
+        currNotepad.append(' '.join(args))
+        message.room.send_message('Added message to your notepad.')
+    if command == 'rm':
+        try:
+            which = int(args[0])
             if which > len(currNotepad):
-                message.room.send_message('Item does not exist.')
+                raise CommandException('Item does not exist.')
             del currNotepad[which - 1]
             message.room.send_message('Message deleted.')
         except:
             return
-    if words[0] == 'rma':
+    if command == 'rma':
         currNotepad = []
         message.room.send_message('All messages deleted.')
-    if words[0] == 'show':
+    if command == 'show':
         if not currNotepad:
-            message.room.send_message('You have no saved messages.')
-            return
+            raise CommandException('You have no saved messages.')
         report = buildReport(currNotepad)
         r = requests.post(apiUrl, json=report)
         r.raise_for_status()
         js = r.json()
-        message.room.send_message('Opened your notepad [here](%s).'%js['reportURL'])
+        message.room.send_message('Opened your notepad [here]({}).'.format(js['reportURL']))
         return
     with open(str(uID) + filename, 'wb') as f:
         pickle.dump(currNotepad, f)
@@ -150,10 +187,15 @@ def onMessage(message, client):
         return
     
     try:
-        handleCommand(message, command, userID)
+        handleMessage(message, userID)
+    except CommandException as e:
+        message.room.send_message(str(e))
     except Exception as e:
-        message.room.send_message('Error occurred: ' + str(e) + ' (cc @Baum)')
+        print(traceback.format_exc())
+        message.room.send_message('Error occurred: {} (cc @Baum @FrankerZ)'.format(e))
 
+if 'ChatExchangeR' in os.environ:
+    roomID = os.environ['ChatExchangeR']
 
 if 'ChatExchangeU' in os.environ:
     email = os.environ['ChatExchangeU']
@@ -170,7 +212,7 @@ print('Logged in')
 
 room = client.get_room(roomID)
 room.join()
-print('Joined room')
+print('Joined room {}'.format(room.name))
 room.send_message('[notepad] Hi o/')
 
 # Load timers
